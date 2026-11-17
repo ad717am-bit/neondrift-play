@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>NeonDrift</title>
+  <style>
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #07040f; touch-action: none; -webkit-user-select: none; user-select: none; }
+    #unity-canvas { position: fixed; left: 0; top: 0; width: 100%; height: 100%; display: block; background: #07040f; outline: none; }
+    #loader { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; background: radial-gradient(ellipse at center, #1b0b33 0%, #07040f 70%); color: #fff; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; z-index: 2; }
+    #loader .title { font-size: 34px; font-weight: 800; letter-spacing: 6px; text-shadow: 0 0 12px #ff2bd6, 0 0 28px #7a2bff; }
+    #loader .bar { width: min(320px, 70vw); height: 6px; border-radius: 3px; background: rgba(255,255,255,.12); overflow: hidden; }
+    #loader .fill { width: 0%; height: 100%; background: linear-gradient(90deg, #22e3ff, #ff2bd6); box-shadow: 0 0 10px #22e3ff; transition: width .2s; }
+    #loader .hint { font-size: 13px; opacity: .6; }
+    #error { display: none; position: fixed; left: 50%; top: 50%; transform: translate(-50%,-50%); max-width: 80vw; padding: 16px 20px; border-radius: 10px; background: #2a0b18; color: #fff; font-family: system-ui, sans-serif; font-size: 14px; z-index: 3; text-align: center; }
+  </style>
+</head>
+<body>
+  <canvas id="unity-canvas" tabindex="-1"></canvas>
+  <div id="loader">
+    <div class="title">NEON DRIFT</div>
+    <div class="bar"><div class="fill" id="fill"></div></div>
+    <div class="hint" id="hint">Загрузка…</div>
+  </div>
+  <div id="error"></div>
+
+  <!-- VK Bridge: связь игры с ВКонтакте. Вне ВК просто ничего не делает. -->
+  <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+  <script>
+    // ---- ВКонтакте: сообщаем, что приложение запустилось (без этого ВК может висеть на экране загрузки)
+    var vk = window.vkBridge || null;
+    window.NeonDriftPlatform = "web";
+    if (vk) {
+      vk.send("VKWebAppInit")
+        .then(function () { window.NeonDriftPlatform = "vk"; })
+        .catch(function () { /* открыто не во ВКонтакте — это нормально */ });
+    }
+
+    // ---- Unity
+    var canvas = document.getElementById("unity-canvas");
+    var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    function showError(msg) {
+      var e = document.getElementById("error");
+      e.innerHTML = msg; e.style.display = "block";
+    }
+
+    var buildUrl = "Build";
+    var config = {
+      arguments: [],
+      dataUrl: buildUrl + "/WebGL.data.unityweb",
+      frameworkUrl: buildUrl + "/WebGL.framework.js.unityweb",
+      codeUrl: buildUrl + "/WebGL.wasm.unityweb",
+      streamingAssetsUrl: "StreamingAssets",
+      companyName: "DefaultCompany",
+      productName: "NeonDrift",
+      productVersion: "0.1.0",
+      showBanner: function (msg, type) { if (type === "error") showError(msg); else console.warn(msg); }
+    };
+
+    // фокус на игре, чтобы клавиатура работала внутри окна ВК
+    canvas.addEventListener("pointerdown", function () { canvas.focus(); });
+    window.addEventListener("load", function () { canvas.focus(); });
+
+    var script = document.createElement("script");
+    script.src = buildUrl + "/WebGL.loader.js";
+    script.onload = function () {
+      createUnityInstance(canvas, config, function (p) {
+        document.getElementById("fill").style.width = Math.round(100 * p) + "%";
+        document.getElementById("hint").textContent = "Загрузка… " + Math.round(100 * p) + "%";
+      }).then(function (unityInstance) {
+        window.unityInstance = unityInstance;
+        document.getElementById("loader").style.display = "none";
+        canvas.focus();
+      }).catch(function (message) {
+        showError("Не удалось запустить игру.<br><small>" + message + "</small>");
+      });
+    };
+    script.onerror = function () { showError("Не удалось загрузить файлы игры. Обновите страницу."); };
+    document.body.appendChild(script);
+  </script>
+</body>
+</html>
