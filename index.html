@@ -13,6 +13,8 @@
     #loader .fill { width: 0%; height: 100%; background: linear-gradient(90deg, #22e3ff, #ff2bd6); box-shadow: 0 0 10px #22e3ff; transition: width .2s; }
     #loader .hint { font-size: 13px; opacity: .6; }
     #error { display: none; position: fixed; left: 50%; top: 50%; transform: translate(-50%,-50%); max-width: 80vw; padding: 16px 20px; border-radius: 10px; background: #2a0b18; color: #fff; font-family: system-ui, sans-serif; font-size: 14px; z-index: 3; text-align: center; }
+    #dbg { display: none; position: fixed; left: 0; right: 0; bottom: 0; max-height: 45vh; overflow: auto; padding: 8px 10px; background: rgba(20,0,10,.88); color: #ffb3c8; font: 12px/1.35 monospace; z-index: 4; white-space: pre-wrap; word-break: break-word; }
+    #dbg b { color: #fff; }
   </style>
 </head>
 <body>
@@ -23,6 +25,7 @@
     <div class="hint" id="hint">Загрузка…</div>
   </div>
   <div id="error"></div>
+  <div id="dbg"></div>
 
   <!-- VK Bridge: связь игры с ВКонтакте. Вне ВК просто ничего не делает. -->
   <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
@@ -36,8 +39,25 @@
         .catch(function () { /* открыто не во ВКонтакте — это нормально */ });
     }
 
+    // ---- Показ ошибок на экране (для проверки на телефоне)
+    var dbgLines = [];
+    function dbg(msg) {
+      var el = document.getElementById("dbg");
+      dbgLines.push(new Date().toTimeString().slice(0, 8) + "  " + String(msg).slice(0, 400));
+      if (dbgLines.length > 30) dbgLines.shift();
+      el.innerHTML = "<b>NEON DRIFT — ошибка (сделайте скриншот):</b>\n" + dbgLines.join("\n");
+      el.style.display = "block";
+    }
+    window.addEventListener("error", function (e) { dbg("JS: " + (e.message || e) + (e.filename ? " @" + e.filename.split("/").pop() + ":" + e.lineno : "")); });
+    window.addEventListener("unhandledrejection", function (e) { dbg("Promise: " + (e.reason && (e.reason.message || e.reason))); });
+    var origErr = console.error;
+    console.error = function () { try { dbg(Array.prototype.join.call(arguments, " ")); } catch (x) {} origErr.apply(console, arguments); };
+    // прочее полезное: устройство и память
+    var devInfo = navigator.userAgent + " | память устройства: " + (navigator.deviceMemory || "?") + " ГБ | экран " + screen.width + "x" + screen.height + " x" + (window.devicePixelRatio || 1);
+
     // ---- Unity
     var canvas = document.getElementById("unity-canvas");
+    canvas.addEventListener("webglcontextlost", function (e) { dbg("Видеокарта сбросила игру (WebGL context lost) — скорее всего не хватило памяти. " + devInfo); }, false);
     var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
     function showError(msg) {
@@ -55,7 +75,7 @@
       companyName: "DefaultCompany",
       productName: "NeonDrift",
       productVersion: "0.1.0",
-      showBanner: function (msg, type) { if (type === "error") showError(msg); else console.warn(msg); }
+      showBanner: function (msg, type) { if (type === "error") { showError(msg); dbg(msg + " | " + devInfo); } else console.warn(msg); }
     };
 
     // фокус на игре, чтобы клавиатура работала внутри окна ВК
@@ -74,6 +94,7 @@
         canvas.focus();
       }).catch(function (message) {
         showError("Не удалось запустить игру.<br><small>" + message + "</small>");
+        dbg("Запуск: " + message + " | " + devInfo);
       });
     };
     script.onerror = function () { showError("Не удалось загрузить файлы игры. Обновите страницу."); };
