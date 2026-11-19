@@ -48,10 +48,45 @@
       el.innerHTML = "<b>NEON DRIFT — ошибка (сделайте скриншот):</b>\n" + dbgLines.join("\n");
       el.style.display = "block";
     }
+    // ---- «Чёрный ящик»: последние записи сохраняются в памяти браузера. Если Safari перезапустил страницу
+    // (не хватило памяти), при следующем открытии они показываются внизу — видно, на каком шаге упало.
+    var BOX = "nd.box";
+    try {
+      var prev = JSON.parse(localStorage.getItem(BOX) || "null");
+      if (prev && prev.alive && prev.lines && prev.lines.length) {
+        dbgLines.push("ПРОШЛЫЙ ЗАПУСК ОБОРВАЛСЯ (страница перезапустилась). Последние записи:");
+        for (var pi = 0; pi < prev.lines.length; pi++) dbgLines.push("  " + prev.lines[pi]);
+        dbg("— конец записей прошлого запуска —");
+      }
+    } catch (x) {}
+    var box = { alive: true, lines: [] };
+    function boxSave() { try { localStorage.setItem(BOX, JSON.stringify(box)); } catch (x) {} }
+    function boxAdd(s) {
+      box.lines.push(new Date().toTimeString().slice(0, 8) + " " + String(s).slice(0, 160));
+      if (box.lines.length > 25) box.lines.shift();
+      boxSave();
+    }
+    window.addEventListener("pagehide", function () { box.alive = false; boxSave(); });
+    boxAdd("старт: " + navigator.userAgent.slice(0, 90));
+    var origLog = console.log;
+    console.log = function () {
+      try { var s = Array.prototype.join.call(arguments, " "); if (s.indexOf("[Track]") >= 0 || s.indexOf("[Neon") >= 0) boxAdd(s); } catch (x) {}
+      origLog.apply(console, arguments);
+    };
+    var lastHeap = 0;
+    setInterval(function () {
+      try {
+        var M = window.unityInstance && window.unityInstance.Module;
+        var b = M && (M.HEAPU8 || M.HEAP8);
+        var mb = b ? Math.round(b.buffer.byteLength / 1048576) : 0;
+        if (mb && mb !== lastHeap) { lastHeap = mb; boxAdd("память игры: " + mb + " МБ"); }
+      } catch (x) {}
+    }, 250);
+
     window.addEventListener("error", function (e) { dbg("JS: " + (e.message || e) + (e.filename ? " @" + e.filename.split("/").pop() + ":" + e.lineno : "")); });
     window.addEventListener("unhandledrejection", function (e) { dbg("Promise: " + (e.reason && (e.reason.message || e.reason))); });
     var origErr = console.error;
-    console.error = function () { try { dbg(Array.prototype.join.call(arguments, " ")); } catch (x) {} origErr.apply(console, arguments); };
+    console.error = function () { try { var s = Array.prototype.join.call(arguments, " "); dbg(s); boxAdd("ОШИБКА: " + s); } catch (x) {} origErr.apply(console, arguments); };
     // прочее полезное: устройство и память
     var devInfo = navigator.userAgent + " | память устройства: " + (navigator.deviceMemory || "?") + " ГБ | экран " + screen.width + "x" + screen.height + " x" + (window.devicePixelRatio || 1);
 
@@ -68,9 +103,9 @@
     var buildUrl = "Build";
     var config = {
       arguments: [],
-      dataUrl: buildUrl + "/6e48a7aa89e671a59f01b9b0a242fc94.data.unityweb",
-      frameworkUrl: buildUrl + "/17103c33242b39f80fc91488a882e164.framework.js.unityweb",
-      codeUrl: buildUrl + "/f9eb1d78db6a02e5b5b21b15ebf360d1.wasm.unityweb",
+      dataUrl: buildUrl + "/7016c664b6b3d25268560d01aced209c.data.unityweb",
+      frameworkUrl: buildUrl + "/55c1d3f050de7fb1cdc1b8b3067ff2e9.framework.js.unityweb",
+      codeUrl: buildUrl + "/1b41420349789a7ee08ff18211e293cc.wasm.unityweb",
       streamingAssetsUrl: "StreamingAssets",
       companyName: "DefaultCompany",
       productName: "NeonDrift",
@@ -83,7 +118,7 @@
     window.addEventListener("load", function () { canvas.focus(); });
 
     var script = document.createElement("script");
-    script.src = buildUrl + "/9b7ab69ecba00823a522e3bc71cd7422.loader.js";
+    script.src = buildUrl + "/09f1eb5fee3dc0f6fdbaa95e3127360f.loader.js";
     script.onload = function () {
       createUnityInstance(canvas, config, function (p) {
         document.getElementById("fill").style.width = Math.round(100 * p) + "%";
