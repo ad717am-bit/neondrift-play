@@ -66,7 +66,17 @@
       if (box.lines.length > 25) box.lines.shift();
       boxSave();
     }
-    window.addEventListener("pagehide", function () { box.alive = false; boxSave(); });
+    window.addEventListener("pagehide", function () {
+      box.alive = false; boxSave();
+      // при закрытии — выключить игру и отдать память (в т.ч. видеопамять): встроенный браузер ВК на iOS
+      // держит закрытую страницу в памяти, и следующий запуск падал на постройке леса
+      try {
+        var gl = canvas.getContext("webgl2") || canvas.getContext("webgl");
+        var lose = gl && gl.getExtension("WEBGL_lose_context");
+        if (window.unityInstance) window.unityInstance.Quit();
+        if (lose) lose.loseContext();
+      } catch (x) {}
+    });
     boxAdd("старт: " + navigator.userAgent.slice(0, 90));
     var origLog = console.log;
     console.log = function () {
@@ -103,9 +113,9 @@
     var buildUrl = "Build";
     var config = {
       arguments: [],
-      dataUrl: buildUrl + "/d271bb525de30fc6d9bafbd79257a9b6.data.unityweb",
+      dataUrl: buildUrl + "/795725951ec7ac0146d4f9a61b4b0e4d.data.unityweb",
       frameworkUrl: buildUrl + "/55c1d3f050de7fb1cdc1b8b3067ff2e9.framework.js.unityweb",
-      codeUrl: buildUrl + "/d6c93eb0fe515a419386e29d4b6e1d2a.wasm.unityweb",
+      codeUrl: buildUrl + "/d44c1d986fdc2318c8e2d52e84f329fb.wasm.unityweb",
       streamingAssetsUrl: "StreamingAssets",
       companyName: "DefaultCompany",
       productName: "NeonDrift",
@@ -120,7 +130,7 @@
     window.addEventListener("load", function () { canvas.focus(); });
 
     var script = document.createElement("script");
-    script.src = buildUrl + "/fe251bcb2a40b63b699aa93fe2e8a047.loader.js";
+    script.src = buildUrl + "/27a2acee3e09077e0041335a69df3af4.loader.js";
     script.onload = function () {
       createUnityInstance(canvas, config, function (p) {
         document.getElementById("fill").style.width = Math.round(100 * p) + "%";
