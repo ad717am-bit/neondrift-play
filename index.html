@@ -68,9 +68,9 @@
     var buildUrl = "Build";
     var config = {
       arguments: [],
-      dataUrl: buildUrl + "/WebGL.data.unityweb",
-      frameworkUrl: buildUrl + "/WebGL.framework.js.unityweb",
-      codeUrl: buildUrl + "/WebGL.wasm.unityweb",
+      dataUrl: buildUrl + "/6e48a7aa89e671a59f01b9b0a242fc94.data.unityweb",
+      frameworkUrl: buildUrl + "/17103c33242b39f80fc91488a882e164.framework.js.unityweb",
+      codeUrl: buildUrl + "/f9eb1d78db6a02e5b5b21b15ebf360d1.wasm.unityweb",
       streamingAssetsUrl: "StreamingAssets",
       companyName: "DefaultCompany",
       productName: "NeonDrift",
@@ -83,7 +83,7 @@
     window.addEventListener("load", function () { canvas.focus(); });
 
     var script = document.createElement("script");
-    script.src = buildUrl + "/WebGL.loader.js";
+    script.src = buildUrl + "/9b7ab69ecba00823a522e3bc71cd7422.loader.js";
     script.onload = function () {
       createUnityInstance(canvas, config, function (p) {
         document.getElementById("fill").style.width = Math.round(100 * p) + "%";
