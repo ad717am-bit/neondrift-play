@@ -103,13 +103,15 @@
     var buildUrl = "Build";
     var config = {
       arguments: [],
-      dataUrl: buildUrl + "/7016c664b6b3d25268560d01aced209c.data.unityweb",
+      dataUrl: buildUrl + "/d271bb525de30fc6d9bafbd79257a9b6.data.unityweb",
       frameworkUrl: buildUrl + "/55c1d3f050de7fb1cdc1b8b3067ff2e9.framework.js.unityweb",
-      codeUrl: buildUrl + "/1b41420349789a7ee08ff18211e293cc.wasm.unityweb",
+      codeUrl: buildUrl + "/d6c93eb0fe515a419386e29d4b6e1d2a.wasm.unityweb",
       streamingAssetsUrl: "StreamingAssets",
       companyName: "DefaultCompany",
       productName: "NeonDrift",
       productVersion: "0.1.0",
+      // на телефонах — не чётче ×2: экран iPhone ×3 даёт кадр ~2800×1300 и в 2,25 раза больше видеопамяти
+      devicePixelRatio: isMobile ? Math.min(window.devicePixelRatio || 1, 2) : (window.devicePixelRatio || 1),
       showBanner: function (msg, type) { if (type === "error") { showError(msg); dbg(msg + " | " + devInfo); } else console.warn(msg); }
     };
 
@@ -118,7 +120,7 @@
     window.addEventListener("load", function () { canvas.focus(); });
 
     var script = document.createElement("script");
-    script.src = buildUrl + "/09f1eb5fee3dc0f6fdbaa95e3127360f.loader.js";
+    script.src = buildUrl + "/fe251bcb2a40b63b699aa93fe2e8a047.loader.js";
     script.onload = function () {
       createUnityInstance(canvas, config, function (p) {
         document.getElementById("fill").style.width = Math.round(100 * p) + "%";
